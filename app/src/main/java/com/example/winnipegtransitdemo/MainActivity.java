@@ -7,9 +7,11 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -23,6 +25,17 @@ import java.net.URL;
 
 public class MainActivity extends AppCompatActivity
 {
+  final String API_KEY = "?api-key=rQ8lXW4lpLR9CwiYqK";
+  final String BEGIN_URL = "https://api.winnipegtransit.com/v2/";
+  final String JSON_APPEND = ".json";
+  final String STATUS_SCHEDULE_REQUEST = "statuses/schedule";
+  final String STOP_SCHEDULE_REQUEST_BEGIN = "stops/";
+  final String STOP_SCHEDULE_REQUEST_END = "/schedule";
+
+  // Stop Schedule example:
+  // http://api.winnipegtransit.com/v2/stops/10064/schedule.json?api-key=rQ8lXW4lpLR9CwiYqK
+
+  String requestUrl;
 
   @Override
   protected void onCreate(Bundle savedInstanceState)
@@ -30,7 +43,11 @@ public class MainActivity extends AppCompatActivity
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    processRss();
+    // URL to request the schedules status
+    // https://api.winnipegtransit.com/v2/statuses/schedule.json?api-key=rQ8lXW4lpLR9CwiYqK
+    requestUrl = BEGIN_URL + STATUS_SCHEDULE_REQUEST + JSON_APPEND + API_KEY;
+    
+    processRequest();
   }
 
   private boolean isNetworkAvailable()
@@ -40,12 +57,12 @@ public class MainActivity extends AppCompatActivity
     return activeNetworkInfo != null && activeNetworkInfo.isConnected();
   }
 
-  public void processRss()
+  public void processRequest()
   {
     if (isNetworkAvailable())
     {
       // create and execute AsyncTask
-      RssProcessingTask task = new RssProcessingTask();
+      ProcessingTask task = new ProcessingTask();
       task.execute();
     }
     else
@@ -54,7 +71,7 @@ public class MainActivity extends AppCompatActivity
     }
   }
 
-  class RssProcessingTask extends AsyncTask
+  class ProcessingTask extends AsyncTask
   {
     // On the start of the thread
     @Override
@@ -67,12 +84,11 @@ public class MainActivity extends AppCompatActivity
     protected Object doInBackground(Object[] objects)
     {
       // Create URL object to RSS file
-      URL url = null;
-      String feedUrl = "https://api.winnipegtransit.com/v2/statuses/schedule.json?api-key=rQ8lXW4lpLR9CwiYqK";
+      URL url = null;      
 
       try
       {
-        url = new URL(feedUrl);
+        url = new URL(requestUrl);
       }
       catch (MalformedURLException e)
       {
@@ -95,11 +111,14 @@ public class MainActivity extends AppCompatActivity
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
         StringBuilder stringBuilder = new StringBuilder();
         String line;
+
         while ((line = bufferedReader.readLine()) != null)
         {
           stringBuilder.append(line);
         }
+
         bufferedReader.close();
+
         return stringBuilder.toString();
       }
       catch (IOException e)
@@ -111,12 +130,10 @@ public class MainActivity extends AppCompatActivity
         connection.disconnect();
       }
 
-
       return null;
     }
 
     // On the end of the thread
-
     @Override
     protected void onPostExecute(Object o)
     {
@@ -124,22 +141,56 @@ public class MainActivity extends AppCompatActivity
 
       Log.i("INFO", o.toString());
 
-      String message = "No information available";
+      parseJSON(response);
+    }
 
-      // Using orj.json
-      try {
-          JSONObject object = (JSONObject) new JSONTokener(response).nextValue();
-          JSONObject statusObject = object.getJSONObject("status");
-          message = statusObject.getString("message");
-//          int likelihood = object.getInt("likelihood");
-//          JSONArray photos = object.getJSONArray("photos");
+    // Verify the request and get the values
+    private void parseJSON(String response)
+    {
+      try
+      {
+        // Using orj.json, get the file string and convert it to an object
+        JSONObject object = (JSONObject) new JSONTokener(response).nextValue();
+
+        // The Winnipeg Transit JSON results usually have nested values
+        // We can identify the request by the first key of the first level
+
+        // The method names() will retrieve an JSONArray with the key names
+        JSONArray objectNames = object.names();
+
+        // Retrieve the first key of the first level
+        String firstKey = objectNames.getString(0);
+
+        if (firstKey.equals("status"))
+        {
+          parseStatus(object.getJSONObject(firstKey));
+        }
+        else if (firstKey.equals("stop-schedule"))
+        {
+
+        }
       }
-      catch (JSONException e) {
-          e.printStackTrace();
+      catch (JSONException e)
+      {
+        e.printStackTrace();
       }
+    }
+
+    // Get the information from the status request
+    private void parseStatus(JSONObject statusObject) throws JSONException
+    {
+      String message = statusObject.getString("message");
+
+      // Other example not related to Winnipeg Transit
+      //int likelihood = object.getInt("likelihood");
 
       TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
       tvStatus.setText(message);
     }
+  }
+
+  public void onClickShowBusesButton(View view)
+  {
+
   }
 }

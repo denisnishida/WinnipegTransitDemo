@@ -19,6 +19,7 @@
       android:id="@+id/tvStatus"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
+      android:text="No information available"
       android:textAppearance="@style/TextAppearance.AppCompat.Body1"/>
 
   <TextView
@@ -40,6 +41,7 @@
       android:id="@+id/button"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
+      android:onClick="onClickShowBusesButton"
       android:text="Show next buses"/>
 
   <TextView
