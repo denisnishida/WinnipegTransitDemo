@@ -209,7 +209,7 @@ public class MainActivity extends AppCompatActivity
 
       // Get route description
       JSONObject routeObj = routeScheduleObj.getJSONObject("route");
-      info += routeObj.getString("name") + ":\n";
+      info += "Route " + routeObj.getString("number") + ":\n";
 
       // Get schedule and estimated times
       JSONArray scheduledArray = routeScheduleObj.getJSONArray("scheduled-stops");
@@ -218,16 +218,24 @@ public class MainActivity extends AppCompatActivity
         JSONObject scheduledObj = scheduledArray.getJSONObject(j);
 
         JSONObject variantObj = scheduledObj.getJSONObject("variant");
-        info += "      Variant: " + variantObj.getString("name") + "\n";
+        info += "      " + variantObj.getString("name") + "\n";
 
         JSONObject arrivalObj = scheduledObj.getJSONObject("times").getJSONObject("arrival");
-        info += "      Scheduled: " + arrivalObj.getString("scheduled") + "\n";
-        info += "      Estimated: " + arrivalObj.getString("estimated") + "\n\n";
+        info += "      Scheduled: " + extractHourMinute(arrivalObj.getString("scheduled")) + "\n";
+        info += "      Estimated:  " + extractHourMinute(arrivalObj.getString("estimated")) + "\n\n";
       }
     }
 
     TextView tvSchedule = (TextView) findViewById(R.id.tvSchedule);
     tvSchedule.setText(info);
+  }
+
+  private String extractHourMinute(String dateTime)
+  {
+    String[] aux = dateTime.split("T");
+    String[] auxTime = aux[1].split(":");
+
+    return auxTime[0] + ":" + auxTime[1];
   }
 
   public void onClickShowBusesButton(View view)
