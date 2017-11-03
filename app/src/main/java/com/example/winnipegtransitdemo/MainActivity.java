@@ -10,6 +10,10 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -116,15 +120,26 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onPostExecute(Object o)
     {
-//      super.onPostExecute(o);
-//      if (response == null)
-//      {
-//        response = "THERE WAS AN ERROR";
-//      }
+      String response = o.toString();
+
       Log.i("INFO", o.toString());
 
-      TextView textView = (TextView) findViewById(R.id.textView);
-      textView.setText(o.toString());
+      String message = "No information available";
+
+      // Using orj.json
+      try {
+          JSONObject object = (JSONObject) new JSONTokener(response).nextValue();
+          JSONObject statusObject = object.getJSONObject("status");
+          message = statusObject.getString("message");
+//          int likelihood = object.getInt("likelihood");
+//          JSONArray photos = object.getJSONArray("photos");
+      }
+      catch (JSONException e) {
+          e.printStackTrace();
+      }
+
+      TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
+      tvStatus.setText(message);
     }
   }
 }
