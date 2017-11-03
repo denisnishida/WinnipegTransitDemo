@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -167,7 +168,7 @@ public class MainActivity extends AppCompatActivity
         }
         else if (firstKey.equals("stop-schedule"))
         {
-
+          parseStopSchedule(object.getJSONObject(firstKey));
         }
       }
       catch (JSONException e)
@@ -175,22 +176,70 @@ public class MainActivity extends AppCompatActivity
         e.printStackTrace();
       }
     }
+  }
 
-    // Get the information from the status request
-    private void parseStatus(JSONObject statusObject) throws JSONException
+  // Get the information from the status request
+  private void parseStatus(JSONObject statusObject) throws JSONException
+  {
+    String message = statusObject.getString("message");
+
+    // Other example not related to Winnipeg Transit
+    //int likelihood = object.getInt("likelihood");
+
+    TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
+    tvStatus.setText(message);
+  }
+
+  // Get the information from the stop schedule request
+  private void parseStopSchedule(JSONObject object) throws JSONException
+  {
+    String info = "";
+
+    // Get Stop Information
+    JSONObject stopObject = object.getJSONObject("stop");
+    info += "Stop: " + stopObject.getString("key") + " - "
+            + stopObject.getString("name") + "\n\n";
+
+    // Get route schedules
+    JSONArray routeSchedulesArray = object.getJSONArray("route-schedules");
+
+    for (int i = 0; i < routeSchedulesArray.length(); i++)
     {
-      String message = statusObject.getString("message");
+      JSONObject routeScheduleObj = routeSchedulesArray.getJSONObject(i);
 
-      // Other example not related to Winnipeg Transit
-      //int likelihood = object.getInt("likelihood");
+      // Get route description
+      JSONObject routeObj = routeScheduleObj.getJSONObject("route");
+      info += routeObj.getString("name") + ":\n";
 
-      TextView tvStatus = (TextView) findViewById(R.id.tvStatus);
-      tvStatus.setText(message);
+      // Get schedule and estimated times
+      JSONArray scheduledArray = routeScheduleObj.getJSONArray("scheduled-stops");
+      for (int j = 0; j < scheduledArray.length(); j++)
+      {
+        JSONObject scheduledObj = scheduledArray.getJSONObject(j);
+
+        JSONObject variantObj = scheduledObj.getJSONObject("variant");
+        info += "      Variant: " + variantObj.getString("name") + "\n";
+
+        JSONObject arrivalObj = scheduledObj.getJSONObject("times").getJSONObject("arrival");
+        info += "      Scheduled: " + arrivalObj.getString("scheduled") + "\n";
+        info += "      Estimated: " + arrivalObj.getString("estimated") + "\n\n";
+      }
     }
+
+    TextView tvSchedule = (TextView) findViewById(R.id.tvSchedule);
+    tvSchedule.setText(info);
   }
 
   public void onClickShowBusesButton(View view)
   {
+    EditText editText = (EditText)findViewById(R.id.editText);
+    String stopNumberString = editText.getText().toString();
 
+    requestUrl = BEGIN_URL + STOP_SCHEDULE_REQUEST_BEGIN
+                 + stopNumberString + STOP_SCHEDULE_REQUEST_END
+                 + JSON_APPEND + API_KEY;
+    processRequest();
   }
+
+
 }
