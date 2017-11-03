@@ -138,11 +138,20 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onPostExecute(Object o)
     {
-      String response = o.toString();
+      if (o != null)
+      {
+        String response = o.toString();
 
-      Log.i("INFO", o.toString());
+        Log.i("INFO", o.toString());
 
-      parseJSON(response);
+        parseJSON(response);
+      }
+      else
+      {
+        Toast.makeText(MainActivity.this,
+                       "Sorry, it was not possible to get the schedule information",
+                       Toast.LENGTH_SHORT).show();
+      }
     }
 
     // Verify the request and get the values
@@ -230,6 +239,7 @@ public class MainActivity extends AppCompatActivity
     tvSchedule.setText(info);
   }
 
+  // The hour and minute need to be extracted because the string is date and time combined
   private String extractHourMinute(String dateTime)
   {
     String[] aux = dateTime.split("T");
@@ -243,10 +253,19 @@ public class MainActivity extends AppCompatActivity
     EditText editText = (EditText)findViewById(R.id.editText);
     String stopNumberString = editText.getText().toString();
 
-    requestUrl = BEGIN_URL + STOP_SCHEDULE_REQUEST_BEGIN
-                 + stopNumberString + STOP_SCHEDULE_REQUEST_END
-                 + JSON_APPEND + API_KEY;
-    processRequest();
+    // Check if is a valid number
+    if (!stopNumberString.isEmpty() && Integer.parseInt(stopNumberString) > 0)
+    {
+
+      requestUrl = BEGIN_URL + STOP_SCHEDULE_REQUEST_BEGIN
+              + stopNumberString + STOP_SCHEDULE_REQUEST_END
+              + JSON_APPEND + API_KEY;
+      processRequest();
+    }
+    else
+    {
+      Toast.makeText(this, "Invalid stop number!", Toast.LENGTH_SHORT).show();
+    }
   }
 
 
